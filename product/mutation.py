@@ -10,7 +10,7 @@ from mock_data import mock_data
 
 
 
-
+# A mutation class to add products in units to the db
 class ProductMutation(graphene.Mutation):
     status = graphene.Boolean()
     message = graphene.String()
@@ -46,6 +46,7 @@ class ProductMutation(graphene.Mutation):
                 message = e
             )
 
+# a mutation to add products in bulk to the db by sending a list of objects
 class BulkProductMutation(graphene.Mutation):
     status = graphene.Boolean()
     message = graphene.String()
@@ -76,20 +77,28 @@ class BulkProductMutation(graphene.Mutation):
                 message = e
             )
 
-
+# this function loops through a list of dictionary objects(this will be provided manually) and adds each product that has its data provided to the db.
 def migrate_products(data: list) -> dict:
     for object in data:
-        Product.objects.create(
-            name = object["name"],
-            description = object["description"],
-            sku = object["sku"],
-            price = object["price"],
-            image = object["image"]
-        )
+        try:
+            Product.objects.create(
+                name = object["name"],
+                description = object["description"],
+                sku = object["sku"],
+                price = object["price"],
+                image = object["image"]
+            )
+        except Exception as e:
+            return {
+                "status": False,
+                "message": str(e)
+            }
     return {
         "status": True,
         "message": "Product(s) migrated"
     }
+
+# this is an exposed get REST endpoint that adds the products that are in the mock data to the db when accessed.
 class MigrateProducts(View):
     def get(self, request):
         for object in mock_data:
